@@ -4,6 +4,8 @@
 MQTT topics must start with: EricssonONE/esignum/
 
 Example: "EricssonONE/edallam/MQTT_Display/text"
+
+ThingSpeak: https://thingspeak.com/channels/753817
 """
 
 from urllib.request import urlopen  # Update to urllib2
@@ -97,7 +99,7 @@ def startit():
                 data = decode_input(line)
                 trashlevel = round(100-(data-14)/(80-14)*100,2)
                 warning_trashlevel(trashlevel)
-                #publish_trashlevel(data)
+                publish_trashlevel(data)
                 publish_MQTT("IoT_Can/3/trashlevel", trashlevel)
             if "ejacsve/Temp" in line:
                 data = decode_input(line)
