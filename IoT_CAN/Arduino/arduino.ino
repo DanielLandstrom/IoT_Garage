@@ -20,17 +20,22 @@ unsigned long DS18B20_postingIntervalDelay = 1 * 1000; //Read and post the tempe
 unsigned long DS18B20_postingIntervalTimer = 0;
  
 // Distance_sensor
-#define DISTANCE_echoPin 7
-#define DISTANCE_trigPin 6
+#define DISTANCE_echoPin 6
+#define DISTANCE_trigPin 7
 unsigned long DISTANCE_postingIntervalDelay = 1 * 1000; //Read and post the temperature every second second.
 unsigned long DISTANCE_postingIntervalTimer = 0;
  
 // Lock Sensor
-int hallSensorPin = A0;
-int ledPinRed =  A1;
-int ledPinGreen = A2;
+int hallSensorPin = A5;
+int ledPinRed =  A2;
+int ledPinGreen = A3;
 int state = 0;
- 
+
+ // Moisture Sensor
+int moistureSensorPin = A4; 
+unsigned long Moisture_postingIntervalDelay = 30 * 1000; // Read and post the moisture every 30 seconds
+unsigned long Moisture_postingIntervalTimer = 0;
+
 void DS18B20_setup(void)
 {
   DS18B20_sensors.begin();
@@ -82,7 +87,7 @@ void DISTANCE_loop(void)
 void LOCK_loop(void)
 {
   state = digitalRead(hallSensorPin);
-  Serial.print("erohsat/lock: ");
+  Serial.print("erohsat/Lock: ");
   Serial.println(!state);
  
   if (state == LOW)
@@ -96,6 +101,29 @@ void LOCK_loop(void)
     digitalWrite(ledPinGreen, HIGH);
   }
 }
+
+void Moisture_loop(void)
+{
+  float sensorValue = 0;
+  // assume using 5V input
+  float t0 = 460; // value corr. to water
+  float t1 = 1042;  //value corr. to air  
+  for (int i = 0; i <= 100; i++) 
+  { 
+     sensorValue = sensorValue + analogRead(moistureSensorPin); 
+     delay(1); 
+  } 
+  sensorValue = sensorValue/100.0; // average over 100 measurements
+  int t2 = (t1-sensorValue)/(t1-t0)*100;
+  if (t2>100){
+    t2 = 100;
+  }
+  if (t2<0){
+    t2 = 0;
+  }
+  Serial.println("ezuleho/Moisture : "+ String(t2));  
+}
+
 void setup(void)
 {
   Serial.begin(9600);
@@ -103,6 +131,7 @@ void setup(void)
   DISTANCE_setup();
   LOCK_setup();
   delay(1000);
+  Serial.println((String) "setup done");
 }
  
 void loop(void)
@@ -115,9 +144,14 @@ void loop(void)
  
   if (millis() - DISTANCE_postingIntervalTimer > DISTANCE_postingIntervalDelay)
   {
+    //DS18B20_loop();
     DISTANCE_loop();
     LOCK_loop();
     DISTANCE_postingIntervalTimer = millis();
   }
- 
+ if (millis() - Moisture_postingIntervalTimer > Moisture_postingIntervalDelay)
+  {
+    Moisture_loop();
+    Moisture_postingIntervalTimer = millis();
+  }
 }

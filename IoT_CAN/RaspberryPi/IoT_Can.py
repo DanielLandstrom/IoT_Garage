@@ -49,7 +49,8 @@ battery1_lastReportedValue      = 0.0
 battery2_lastReportedValue      = 0.0
 # SOLAR
 solar_lastReportedValue         = 0.0
-
+# Moisture
+moisture_lastReportedValue = -10
 
 # ThingSpeak
 ThingSpeak_reportingCounter = 1
@@ -77,7 +78,8 @@ def startit():
     client = mqtt.Client()
 
     config = getConfig()
-
+    
+    #arduino1 = serial.Serial('COM3',9600,timeout=100)
     arduino1 = serial.Serial('/dev/ttyACM0',9600,timeout=100)
     #arduino2 = serial.Serial('/dev/ttyACM1',9600,timeout=100)
     #arduino3 = serial.Serial('/dev/ttyACM2',9600,timeout=100)
@@ -136,6 +138,9 @@ def startit():
                 data = decode_input(line)
                 publish_solar(data)
                 #publish_MQTT("IoT_Can/3/solar", data)
+            if "ezuleho/Moisture" in line:
+                data = decode_input(line)
+                publish_moisture(data)
             else:
                 print('No data received')
             send2ThingSpeak()      
@@ -311,6 +316,20 @@ def publish_solar(data):
         field8_str = '&field8=%s' % (data)
 
 ##################################################################
+# Moisture
+
+def publish_moisture(data):
+    diff = 5    # 5 % in moisture level  
+    global ThingSpeak_unreportedChange
+    global moisture_lastReportedValue
+    global field9_str
+    if abs(data - moisture_lastReportedValue) >= diff: 
+        ThingSpeak_unreportedChange = True
+        moisture_lastReportedValue = data
+        data = '%.2f' % data
+        field9_str = '&field9=%s' % (data)   
+        
+##################################################################
 # Other functions
 ##################################################################
 def decode_input(line):
@@ -357,6 +376,7 @@ def send2ThingSpeak():
     global field6_str
     global field7_str
     global field8_str
+    global field9_str
     global baseURL
     
     # Somethings has to be sent and we did not just send
@@ -367,7 +387,8 @@ def send2ThingSpeak():
         field_str = field1_str + field2_str + \
                     field3_str + field4_str + \
                     field5_str + field6_str + \
-                    field7_str + field8_str
+                    field7_str + field8_str + \
+                    field9_str
 
         config = getConfig()
 
